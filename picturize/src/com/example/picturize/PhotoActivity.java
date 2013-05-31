@@ -54,74 +54,90 @@ public class PhotoActivity extends Activity {
 	}
 	
 	private boolean selectedItemActionBar(MenuItem item) {
-		if (item.getItemId() == 0) {
-			Random rand = new Random();
-			final int  n = rand.nextInt(1000) + 1;
-			Toast.makeText(getApplicationContext(), "Image Downloaded at " + Environment.getExternalStorageDirectory() + "/myImage" + Integer.toString(n) + ".png", Toast.LENGTH_LONG).show();
-			new Thread(new Runnable() {
-		        public void run() {
-					URL url;
-					InputStream input = null;
-					try {
-						url = new URL (source);
-						try {
-							input = url.openStream();
-						} catch (IOException e) {
-							// TODO Auto-generated catch block
-							e.printStackTrace();
-						}
-					} catch (MalformedURLException e) {
-						// TODO Auto-generated catch block
-						e.printStackTrace();
-					}
-					
-					try {
-					    //The sdcard directory e.g. '/sdcard' can be used directly, or 
-					    //more safely abstracted with getExternalStorageDirectory()
 
-					    File storagePath = Environment.getExternalStorageDirectory();
-					    OutputStream output = null;
+		if (item.getItemId() == 0) {
+			String path = null;
+			String state = Environment.getExternalStorageState();
+			if (!(Environment.MEDIA_MOUNTED.equals(state)))  {
+				Toast.makeText(getApplicationContext(), "SD card needed to download pictures", Toast.LENGTH_LONG).show();
+			}
+			else {
+				Random rand = new Random();
+				final int  n = rand.nextInt(1000) + 1;
+				Toast.makeText(getApplicationContext(), "Image Downloaded at " + Environment.getExternalStorageDirectory() + "/myImage" + Integer.toString(n) + ".png", Toast.LENGTH_LONG).show();
+				new Thread(new Runnable() {
+			        public void run() {
+						URL url;
+						InputStream input = null;
 						try {
-							output = new FileOutputStream (new File(storagePath,"myImage" + Integer.toString(n) + ".png"));
-						} catch (FileNotFoundException e) {
+							url = new URL (source);
+							try {
+								input = url.openStream();
+							} catch (IOException e) {
+								// TODO Auto-generated catch block
+								e.printStackTrace();
+							}
+						} catch (MalformedURLException e) {
 							// TODO Auto-generated catch block
 							e.printStackTrace();
 						}
-					    try {
-					        byte[] buffer = new byte[1024];
-					        int bytesRead = 0;
-					        try {
-								while ((bytesRead = input.read(buffer, 0, buffer.length)) >= 0) {
-								    output.write(buffer, 0, bytesRead);
+						
+						try {
+						    //The sdcard directory e.g. '/sdcard' can be used directly, or 
+						    //more safely abstracted with getExternalStorageDirectory()
+	
+						    File storagePath = Environment.getExternalStorageDirectory();
+						    OutputStream output = null;
+							try {
+								output = new FileOutputStream (new File(storagePath,"myImage" + Integer.toString(n) + ".png"));
+							} catch (FileNotFoundException e) {
+								// TODO Auto-generated catch block
+								e.printStackTrace();
+							}
+						    try {
+						        byte[] buffer = new byte[1024];
+						        int bytesRead = 0;
+						        try {
+									while ((bytesRead = input.read(buffer, 0, buffer.length)) >= 0) {
+									    output.write(buffer, 0, bytesRead);
+									}
+								} catch (IOException e) {
+									// TODO Auto-generated catch block
+									e.printStackTrace();
 								}
+						    } finally {
+						        try {
+									output.close();
+								} catch (IOException e) {
+									// TODO Auto-generated catch block
+									e.printStackTrace();
+								}
+						    }
+						} finally {
+						    try {
+								input.close();
 							} catch (IOException e) {
 								// TODO Auto-generated catch block
 								e.printStackTrace();
 							}
-					    } finally {
-					        try {
-								output.close();
-							} catch (IOException e) {
-								// TODO Auto-generated catch block
-								e.printStackTrace();
-							}
-					    }
-					} finally {
-					    try {
-							input.close();
-						} catch (IOException e) {
-							// TODO Auto-generated catch block
-							e.printStackTrace();
 						}
-					}
-		        }
-			}).start();
+			        }
+				}).start();
+			}
 		}
 			
 		else if (item.getItemId() == 1) {
 			Intent intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
-		    File photo =
-		            new File(Environment.getExternalStorageDirectory(), "Pic.jpg");
+			
+			String state = Environment.getExternalStorageState();
+			File photo = null;
+			if (Environment.MEDIA_MOUNTED.equals(state))  {
+				photo = new File(Environment.getExternalStorageDirectory(), "Pic.jpg");
+			}
+			else {
+				photo = new File(Environment.getDataDirectory(), "Pic.jpg");
+			}
+			
 			intent.putExtra(MediaStore.EXTRA_OUTPUT, Uri.fromFile(photo));
 			startActivityForResult(intent, CAMERA_REQUEST);
 			return true;
@@ -162,7 +178,12 @@ public class PhotoActivity extends Activity {
 	
 	public void onActivityResult(int requestCode, int resultCode, Intent intent) {
 		 if ((requestCode == CAMERA_REQUEST) && (resultCode == Activity.RESULT_OK)) {
-			 File f = new File(Environment.getExternalStorageDirectory() + "/pic.jpg");
+			 File f = null;
+			 String state = Environment.getExternalStorageState();
+			 if (Environment.MEDIA_MOUNTED.equals(state)) 
+				 f = new File(Environment.getExternalStorageDirectory() + "/pic.jpg");
+			 else
+				 f = new File(Environment.getDataDirectory() + "/pic.jpg");
 			 Bitmap bi = decodeFile(f);
 			 Log.d("SUBIDA", "HORA DE SUBIR LA FOTO");
 			 final RequestAsyncTask uploadRequest = Request.executeUploadPhotoRequestAsync(Session.getActiveSession(), bi, new Request.Callback() {

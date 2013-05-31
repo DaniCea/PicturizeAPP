@@ -61,8 +61,15 @@ public class PhotosGridActivity extends Activity {
 		switch (item.getItemId()) {
 		case 0:
 			Intent intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
-		    File photo =
-		            new File(Environment.getExternalStorageDirectory(), "Pic.jpg");
+			
+			String state = Environment.getExternalStorageState();
+			File photo = null;
+			if (Environment.MEDIA_MOUNTED.equals(state))  {
+				photo = new File(Environment.getExternalStorageDirectory(), "Pic.jpg");
+			}
+			else {
+				photo = new File(Environment.getDataDirectory(), "Pic.jpg");
+			}
 			intent.putExtra(MediaStore.EXTRA_OUTPUT, Uri.fromFile(photo));
 			startActivityForResult(intent, CAMERA_REQUEST);
 			return true;
@@ -171,7 +178,12 @@ public class PhotosGridActivity extends Activity {
 	
 	public void onActivityResult(int requestCode, int resultCode, Intent intent) {
 		 if ((requestCode == CAMERA_REQUEST) && (resultCode == Activity.RESULT_OK)) {
-			 File f = new File(Environment.getExternalStorageDirectory() + "/pic.jpg");
+			 File f = null;
+			 String state = Environment.getExternalStorageState();
+			 if (Environment.MEDIA_MOUNTED.equals(state)) 
+				 f = new File(Environment.getExternalStorageDirectory() + "/pic.jpg");
+			 else
+				 f = new File(Environment.getDataDirectory() + "/pic.jpg");
 			 Bitmap bi = decodeFile(f);
 			 Log.d("SUBIDA", "HORA DE SUBIR LA FOTO");
 			 final RequestAsyncTask uploadRequest = Request.executeUploadPhotoRequestAsync(session, bi, new Request.Callback() {
